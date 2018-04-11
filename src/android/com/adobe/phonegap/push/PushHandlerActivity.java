@@ -9,118 +9,133 @@ import android.os.Bundle;
 import android.util.Log;
 import android.support.v4.app.RemoteInput;
 
+import java.util.List;
 
 public class PushHandlerActivity extends Activity implements PushConstants {
-    private static String LOG_TAG = "Push_HandlerActivity";
+	private static String LOG_TAG = "Push_HandlerActivity";
 
-    /*
-     * this activity will be started if the user touches a notification that we own.
-     * We send it's data off to the push plugin for processing.
-     * If needed, we boot up the main activity to kickstart the application.
-     * @see android.app.Activity#onCreate(android.os.Bundle)
-     */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        FCMService gcm = new FCMService();
+	/*
+	* this activity will be started if the user touches a notification that we own.
+	* We send it's data off to the push plugin for processing.
+	* If needed, we boot up the main activity to kickstart the application.
+	* @see android.app.Activity#onCreate(android.os.Bundle)
+	*/
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		Intent intent = getIntent();
 
-        Intent intent = getIntent();
+		int notId = intent.getExtras().getInt(NOT_ID, 0);
+		Log.d(LOG_TAG, "not id = " + notId);
 
-        int notId = intent.getExtras().getInt(NOT_ID, 0);
-        Log.d(LOG_TAG, "not id = " + notId);
-        gcm.setNotification(notId, "");
-        super.onCreate(savedInstanceState);
-        Log.v(LOG_TAG, "onCreate");
-        String callback = getIntent().getExtras().getString("callback");
-        Log.d(LOG_TAG, "callback = " + callback);
-        boolean foreground = getIntent().getExtras().getBoolean("foreground", true);
-        boolean startOnBackground = getIntent().getExtras().getBoolean(START_IN_BACKGROUND, false);
-        boolean dismissed = getIntent().getExtras().getBoolean(DISMISSED, false);
-        Log.d(LOG_TAG, "dismissed = " + dismissed);
+		FCMService.dismissNotification(notId);
 
-        if(!startOnBackground){
-            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.cancel(FCMService.getAppName(this), notId);
-        }
+		super.onCreate(savedInstanceState);		
+		Log.v(LOG_TAG, "onCreate");
 
-        boolean isPushPluginActive = PushPlugin.isActive();
-        boolean inline = processPushBundle(isPushPluginActive, intent);
+		String callback = getIntent().getExtras().getString("callback");
+		Log.d(LOG_TAG, "callback = " + callback);
 
-        if(inline && android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N && !startOnBackground){
-            foreground = true;
-        }
+		boolean foreground = getIntent().getExtras().getBoolean("foreground", true);
+		boolean startOnBackground = getIntent().getExtras().getBoolean(START_IN_BACKGROUND, false);
+		boolean dismissed = getIntent().getExtras().getBoolean(DISMISSED, false);
+		Log.d(LOG_TAG, "dismissed = " + dismissed);
 
-        Log.d(LOG_TAG, "bringToForeground = " + foreground);
+		if (!startOnBackground) {
+			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+			notificationManager.cancel(FCMService.getAppName(this), notId);
+		}
 
-        finish();
+		boolean isPushPluginActive = PushPlugin.isActive();
+		boolean inline = processPushBundle(isPushPluginActive, intent);
 
-        if(!dismissed) {
-            Log.d(LOG_TAG, "isPushPluginActive = " + isPushPluginActive);
-            if (!isPushPluginActive && foreground && inline) {
-                Log.d(LOG_TAG, "forceMainActivityReload");
-                forceMainActivityReload(false);
-            } else if(startOnBackground) {
-                Log.d(LOG_TAG, "startOnBackgroundTrue");
-                forceMainActivityReload(true);
-            } else {
-                Log.d(LOG_TAG, "don't want main activity");
-            }
-        }
-    }
+		if (inline && android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N && !startOnBackground) {
+			foreground = true;
+		}
 
-    /**
-     * Takes the pushBundle extras from the intent,
-     * and sends it through to the PushPlugin for processing.
-     */
-    private boolean processPushBundle(boolean isPushPluginActive, Intent intent) {
-        Bundle extras = getIntent().getExtras();
-        Bundle remoteInput = null;
+		Log.d(LOG_TAG, "bringToForeground = " + foreground);
 
-        if (extras != null) {
-            Bundle originalExtras = extras.getBundle(PUSH_BUNDLE);
+		finish();
 
-            originalExtras.putBoolean(FOREGROUND, false);
-            originalExtras.putBoolean(COLDSTART, !isPushPluginActive);
-            originalExtras.putBoolean(DISMISSED, extras.getBoolean(DISMISSED));
-            originalExtras.putString(ACTION_CALLBACK, extras.getString(CALLBACK));
-            originalExtras.remove(NO_CACHE);
+		if (!dismissed) {
+			Log.d(LOG_TAG, "isPushPluginActive = " + isPushPluginActive);
 
-            remoteInput = RemoteInput.getResultsFromIntent(intent);
-            if (remoteInput != null) {
-                String inputString = remoteInput.getCharSequence(INLINE_REPLY).toString();
-                Log.d(LOG_TAG, "response: " + inputString);
-                originalExtras.putString(INLINE_REPLY, inputString);
-            }
+			if (!isPushPluginActive && foreground && inline) {
+				Log.d(LOG_TAG, "forceMainActivityReload");
+				forceMainActivityReload(false);
+			} else if (startOnBackground) {
+				Log.d(LOG_TAG, "startOnBackgroundTrue");
+				forceMainActivityReload(true);
+			} else {
+				Log.d(LOG_TAG, "don't want main activity");
+			}
+		}
+	}
 
-            PushPlugin.sendExtras(originalExtras);
-        }
-        return remoteInput == null;
-    }
+	/**
+	* Takes the pushBundle extras from the intent,
+	* and sends it through to the PushPlugin for processing.
+	*/
+	private boolean processPushBundle(boolean isPushPluginActive, Intent intent) {
+		Bundle extras = getIntent().getExtras();
+		Bundle remoteInput = null;
 
-    /**
-     * Forces the main activity to re-launch if it's unloaded.
-     */
-    private void forceMainActivityReload(boolean startOnBackground) {
-        PackageManager pm = getPackageManager();
-        Intent launchIntent = pm.getLaunchIntentForPackage(getApplicationContext().getPackageName());
+		if (extras != null) {
+			Bundle originalExtras = extras.getBundle(PUSH_BUNDLE);
+			List<Bundle> extrasList = extras.getParcelableArrayList(PUSH_LIST_BUNDLE);
 
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            Bundle originalExtras = extras.getBundle(PUSH_BUNDLE);
-            if (originalExtras != null) {
-                launchIntent.putExtras(originalExtras);
-            }
-            launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            launchIntent.addFlags(Intent.FLAG_FROM_BACKGROUND);
-            launchIntent.putExtra(START_IN_BACKGROUND, startOnBackground);
-        }
+			boolean foreground = false;
+			boolean coldstart = !isPushPluginActive;
+			Boolean dismissed = extras.getBoolean(DISMISSED);
+			String actionCallback = extras.getString(CALLBACK);
 
-        startActivity(launchIntent);
-    }
+			originalExtras.putBoolean(FOREGROUND, foreground);
+			originalExtras.putBoolean(COLDSTART, coldstart);
+			originalExtras.putBoolean(DISMISSED, dismissed);
+			originalExtras.putString(ACTION_CALLBACK, actionCallback);
+			originalExtras.remove(NO_CACHE);
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        final NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancelAll();
-    }
+			remoteInput = RemoteInput.getResultsFromIntent(intent);
+			
+			if (remoteInput != null) {
+				String inputString = remoteInput.getCharSequence(INLINE_REPLY).toString();
+				Log.d(LOG_TAG, "response: " + inputString);
+				originalExtras.putString(INLINE_REPLY, inputString);
+			}
+
+			// PushPlugin.sendExtras(originalExtras);
+			PushPlugin.sendMainData(originalExtras, extrasList);
+		}
+		return remoteInput == null;
+	}
+
+	/**
+	* Forces the main activity to re-launch if it's unloaded.
+	*/
+	private void forceMainActivityReload(boolean startOnBackground) {
+		PackageManager pm = getPackageManager();
+		Intent launchIntent = pm.getLaunchIntentForPackage(getApplicationContext().getPackageName());
+
+		Bundle extras = getIntent().getExtras();
+
+		if (extras != null) {
+			Bundle originalExtras = extras.getBundle(PUSH_BUNDLE);
+
+			if (originalExtras != null) {
+				launchIntent.putExtras(originalExtras);
+			}
+
+			launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+			launchIntent.addFlags(Intent.FLAG_FROM_BACKGROUND);
+			launchIntent.putExtra(START_IN_BACKGROUND, startOnBackground);
+		}
+
+		startActivity(launchIntent);
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		final NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+		notificationManager.cancelAll();
+	}
 }
