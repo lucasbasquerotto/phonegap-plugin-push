@@ -17,7 +17,8 @@ class PushNotification {
   constructor(options) {
     this.handlers = {
       registration: [],
-      notification: [],
+	  notification: [],
+	  notificationList: [],
       error: [],
     };
 
@@ -39,6 +40,8 @@ class PushNotification {
         typeof result.additionalData.actionCallback !== 'undefined'
       ) {
         this.emit(result.additionalData.actionCallback, result);
+	  } else if (result && result.last) {
+	    this.emit('notificationList', result);
       } else if (result) {
         this.emit('notification', result);
       }
