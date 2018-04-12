@@ -34,6 +34,7 @@ var PushNotification = function () {
     this.handlers = {
       registration: [],
       notification: [],
+      notificationList: [],
       error: []
     };
 
@@ -51,6 +52,8 @@ var PushNotification = function () {
         _this.emit('registration', result);
       } else if (result && result.additionalData && typeof result.additionalData.actionCallback !== 'undefined') {
         _this.emit(result.additionalData.actionCallback, result);
+      } else if (result && result.last) {
+        _this.emit('notificationList', result);
       } else if (result) {
         _this.emit('notification', result);
       }
@@ -96,6 +99,7 @@ var PushNotification = function () {
           _this2.handlers = {
             registration: [],
             notification: [],
+            notificationList: [],
             error: []
           };
         }
