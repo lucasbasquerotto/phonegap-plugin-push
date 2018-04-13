@@ -18,7 +18,7 @@ class PushNotification {
     this.handlers = {
       registration: [],
 	  notification: [],
-	  notificationList: [],
+	  mainNotification: [],
       error: [],
     };
 
@@ -41,7 +41,7 @@ class PushNotification {
       ) {
         this.emit(result.additionalData.actionCallback, result);
 	  } else if (result && result.last) {
-	    this.emit('notificationList', result);
+	    this.emit('mainNotification', result);
       } else if (result) {
         this.emit('notification', result);
       }
