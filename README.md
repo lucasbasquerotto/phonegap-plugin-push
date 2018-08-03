@@ -14,7 +14,7 @@ To download this package you can run:
 
 ## Features:
 
-**1. Different titles when there is more than 1 notification with the same notId**
+**1. Different titles when there is more than 1 notification with the same `notId`**
 
 **2. The `summaryText` will be shown in collapsed notifications when there is more than one grouped together**
 
