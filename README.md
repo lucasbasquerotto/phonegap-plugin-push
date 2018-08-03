@@ -2,6 +2,36 @@
 
 > Register and receive push notifications
 
+---
+
+# New features in this repo
+
+You can see the new features in this forked repository accessing [here](docs/NEW_FEATURES.md).
+
+To download this package you can run: 
+
+`cordova plugin add https://github.com/lucasbasquerotto/phonegap-plugin-push`
+
+## Features:
+
+**1. Different titles when there is more than 1 notification with the same notId**
+
+**2. The `summaryText` will be shown in collapsed notifications when there is more than one grouped together**
+
+**3. Message prefix**
+
+**4. Different images when there is more than 1 notification with the same `notId`**
+
+**5. Possibility to delete notifications with the `notId` specified**
+
+**6. Change the sound and vibration for different notifications with the same `notId`**
+
+**7. Subgroup (`subId`) for notifications with the same `notId`**
+
+**8. Group notifications together when received in the App**
+
+---
+
 # Warning
 
 The links below take you to the version 2.x documentation which includes a
