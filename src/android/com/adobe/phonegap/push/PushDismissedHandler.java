@@ -6,19 +6,19 @@ import android.os.Bundle;
 import android.util.Log;
 
 public class PushDismissedHandler extends BroadcastReceiver implements PushConstants {
-	private static String LOG_TAG = "Push_DismissedHandler";
+  private static String LOG_TAG = "Push_DismissedHandler";
 
-	@Override
-	public void onReceive(Context context, Intent intent) {
-		Bundle extras = intent.getExtras();
-		String action = intent.getAction();
-		int notId = intent.getIntExtra(NOT_ID, 0);
+  @Override
+  public void onReceive(Context context, Intent intent) {
+    Bundle extras = intent.getExtras();
+    String action = intent.getAction();
+    int notId = intent.getIntExtra(NOT_ID, 0);
 
-		if (action.equals(PUSH_DISMISSED)) {
-			Log.d(LOG_TAG, "PushDismissedHandler = " + extras);
-			Log.d(LOG_TAG, "not id = " + notId);
+    if (action.equals(PUSH_DISMISSED)) {
+      Log.d(LOG_TAG, "PushDismissedHandler = " + extras);
+      Log.d(LOG_TAG, "not id = " + notId);
 
-			FCMService.dismissNotification(notId);
-		}
-	}
+      FCMService.dismissNotification(notId);
+    }
+  }
 }
